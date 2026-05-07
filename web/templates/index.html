@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Off_WebSec_RAG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="shell">
+    <header class="header">
+      <p class="eyebrow">Simple RAG · Official Web Attack Sources</p>
+      <h1>Off_WebSec_RAG</h1>
+      <p class="scope">Baseline retrieval-augmented generation for OWASP and MITRE web attack references.</p>
+    </header>
+
+    <section class="panel">
+      <form method="post" class="question-form">
+        <label for="question">Ask a web attack question</label>
+        <div class="row">
+          <input id="question" name="question" value="{{ question }}" placeholder="What is SQL injection?">
+          <button type="submit">Ask</button>
+        </div>
+      </form>
+      <p class="status">{{ status }}</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Answer</h2>
+        <pre>{{ answer or "The answer will appear here after the official corpus and Simple RAG engine are merged." }}</pre>
+      </article>
+
+      <aside class="panel">
+        <h2>Retrieved Sources</h2>
+        {% if results %}
+          <ul class="sources">
+            {% for item in results %}
+              <li>
+                <strong>{{ item.chunk.metadata.title }}</strong>
+                <span>score {{ "%.3f"|format(item.score) }}</span>
+                <a href="{{ item.chunk.metadata.url }}" target="_blank" rel="noreferrer">official source</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No retrieved chunks yet.</p>
+        {% endif %}
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

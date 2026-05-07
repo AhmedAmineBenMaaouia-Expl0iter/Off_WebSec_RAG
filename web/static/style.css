@@ -1,0 +1,118 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
+  color: #17202a;
+}
+
+body {
+  margin: 0;
+}
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.header {
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #546371;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: 38px;
+}
+
+.scope {
+  margin: 8px 0 0;
+  color: #43505d;
+}
+
+.panel {
+  background: white;
+  border: 1px solid #d8e0e7;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #b7c1cc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  padding: 0 18px;
+  border: 0;
+  border-radius: 6px;
+  background: #1457d9;
+  color: white;
+  font-weight: 700;
+}
+
+.status {
+  margin-bottom: 0;
+  color: #52616f;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 18px;
+}
+
+pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.55;
+}
+
+.sources {
+  padding-left: 18px;
+}
+
+.sources li {
+  margin-bottom: 14px;
+}
+
+.sources span {
+  display: block;
+  color: #52616f;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .row,
+  .grid {
+    display: block;
+  }
+
+  button {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 10px;
+  }
+}
