@@ -39,6 +39,32 @@ class SimpleRagTests(unittest.TestCase):
         self.assertIn("Parameterized queries", response.answer)
         self.assertIn("https://owasp.org/example/sqli", response.answer)
 
+    def test_ssrf_acronym_retrieves_ssrf_source(self):
+        documents = [
+            Document(
+                id="owasp-ssrf",
+                text="Server-Side Request Forgery lets an application make unintended requests to internal or external systems.",
+                metadata={
+                    "title": "OWASP Server Side Request Forgery Prevention Cheat Sheet",
+                    "url": "https://owasp.org/example/ssrf",
+                    "topic": "ssrf",
+                },
+            ),
+            Document(
+                id="owasp-xss",
+                text="Cross-site scripting runs attacker controlled script in a browser.",
+                metadata={"title": "OWASP XSS Prevention", "url": "https://owasp.org/example/xss", "topic": "xss"},
+            ),
+        ]
+        chunks = chunk_documents(documents, chunk_words=40, overlap_words=5)
+        index = TfidfVectorIndex()
+        index.fit(chunks)
+
+        response = SimpleRag(index).answer("What is SSRF?")
+
+        self.assertIn("Server-Side Request Forgery", response.answer)
+        self.assertIn("https://owasp.org/example/ssrf", response.answer)
+
 
 if __name__ == "__main__":
     unittest.main()

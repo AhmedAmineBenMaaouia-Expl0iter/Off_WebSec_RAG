@@ -27,7 +27,7 @@ class TfidfVectorIndex:
     def fit(self, chunks: list[Chunk]) -> None:
         self.chunks = chunks
         document_frequency: Counter[str] = Counter()
-        tokenized = [tokenize(chunk.text) for chunk in chunks]
+        tokenized = [tokenize(searchable_text(chunk)) for chunk in chunks]
         for tokens in tokenized:
             document_frequency.update(set(tokens))
         total = max(len(chunks), 1)
@@ -39,9 +39,13 @@ class TfidfVectorIndex:
 
     def search(self, query: str, top_k: int = 4) -> list[RetrievalResult]:
         query_vector = self._vector(tokenize(query))
+        query_tokens = set(tokenize(query))
         results: list[RetrievalResult] = []
         for chunk, vector in zip(self.chunks, self.vectors):
             score = cosine(query_vector, vector)
+            metadata_tokens = set(tokenize(metadata_text(chunk)))
+            if query_tokens & metadata_tokens:
+                score += 0.08
             if score > 0:
                 results.append(RetrievalResult(chunk=chunk, score=score))
         results.sort(key=lambda item: item.score, reverse=True)
@@ -78,6 +82,18 @@ class TfidfVectorIndex:
 
 def tokenize(text: str) -> list[str]:
     return [match.group(0).lower() for match in TOKEN_RE.finditer(text)]
+
+
+def metadata_text(chunk: Chunk) -> str:
+    metadata = chunk.metadata
+    return " ".join(
+        str(metadata.get(key, ""))
+        for key in ("title", "topic", "authority", "url", "document_id")
+    )
+
+
+def searchable_text(chunk: Chunk) -> str:
+    return f"{chunk.text} {metadata_text(chunk)}"
 
 
 def cosine(left: dict[str, float], right: dict[str, float]) -> float:
