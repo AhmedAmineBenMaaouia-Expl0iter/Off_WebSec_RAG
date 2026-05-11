@@ -1,70 +1,87 @@
-import pytest
-from off_websec_rag.importer import import_official_sources, VisibleTextParser
-from off_websec_rag.official_sources import OfficialSource, OFFICIAL_SOURCES
-from off_websec_rag.documents import Document, load_documents
+import unittest
+
+from off_websec_rag.documents import Document
+from off_websec_rag.importer import VisibleTextParser
+from off_websec_rag.official_sources import OFFICIAL_SOURCES, OfficialSource
 
 
-class TestOfficialSource:
+class OfficialSourceTests(unittest.TestCase):
     def test_official_source_creation(self):
-        """Test creating an OfficialSource"""
         source = OfficialSource(
             topic="test",
             title="Test Source",
             url="https://example.com",
-            authority="TEST"
+            authority="TEST",
         )
-        assert source.topic == "test"
-        assert source.title == "Test Source"
+
+        self.assertEqual(source.topic, "test")
+        self.assertEqual(source.title, "Test Source")
+        self.assertEqual(source.resource_type, "html")
 
     def test_official_source_slug(self):
-        """Test slug generation"""
         source = OfficialSource(
             topic="test",
             title="OWASP SQL Injection Prevention",
             url="https://example.com",
-            authority="OWASP"
+            authority="OWASP",
         )
-        assert source.slug == "owasp-sql-injection-prevention"
+
+        self.assertEqual(source.slug, "owasp-sql-injection-prevention")
+
+    def test_expanded_official_sources_cover_web_attack_range(self):
+        topics = {source.topic for source in OFFICIAL_SOURCES}
+
+        self.assertIn("sql_injection", topics)
+        self.assertIn("xss", topics)
+        self.assertIn("ssrf", topics)
+        self.assertIn("csrf", topics)
+        self.assertIn("xxe", topics)
+        self.assertIn("path_traversal", topics)
+        self.assertIn("file_upload", topics)
+        self.assertIn("command_injection", topics)
+        self.assertIn("web_testing", topics)
+
+    def test_pdf_source_is_configured(self):
+        pdf_sources = [source for source in OFFICIAL_SOURCES if source.resource_type == "pdf"]
+
+        self.assertTrue(pdf_sources)
+        self.assertTrue(any("Testing Guide" in source.title for source in pdf_sources))
+
+    def test_all_sources_have_required_fields(self):
+        for source in OFFICIAL_SOURCES:
+            self.assertTrue(source.topic)
+            self.assertTrue(source.title)
+            self.assertTrue(source.url.startswith("https://"))
+            self.assertTrue(source.authority)
 
 
-class TestVisibleTextParser:
+class VisibleTextParserTests(unittest.TestCase):
     def test_parse_simple_html(self):
-        """Test parsing simple HTML"""
         parser = VisibleTextParser()
         parser.feed("<p>Hello World</p>")
-        assert "Hello World" in parser.text()
+
+        self.assertIn("Hello World", parser.text())
 
     def test_ignore_script_tags(self):
-        """Test that script content is ignored"""
         parser = VisibleTextParser()
         parser.feed("<p>Visible</p><script>alert('hidden')</script>")
         text = parser.text()
-        assert "Visible" in text
-        assert "hidden" not in text
+
+        self.assertIn("Visible", text)
+        self.assertNotIn("hidden", text)
 
 
-class TestDocument:
+class DocumentTests(unittest.TestCase):
     def test_document_creation(self):
-        """Test creating a Document"""
         doc = Document(
             id="test-doc",
             text="Test content",
-            metadata={"source": "official"}
+            metadata={"source": "official"},
         )
-        assert doc.id == "test-doc"
-        assert doc.text == "Test content"
-        assert doc.metadata["source"] == "official"
 
+        self.assertEqual(doc.id, "test-doc")
+        self.assertEqual(doc.text, "Test content")
+        self.assertEqual(doc.metadata["source"], "official")
+if __name__ == "__main__":
+    unittest.main()
 
-class TestOfficialSources:
-    def test_official_sources_not_empty(self):
-        """Test that OFFICIAL_SOURCES is populated"""
-        assert len(OFFICIAL_SOURCES) > 0
-
-    def test_all_sources_have_required_fields(self):
-        """Test that all sources have required fields"""
-        for source in OFFICIAL_SOURCES:
-            assert source.topic
-            assert source.title
-            assert source.url
-            assert source.authority
