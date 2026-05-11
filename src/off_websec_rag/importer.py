@@ -5,6 +5,7 @@ import re
 from dataclasses import asdict
 from html.parser import HTMLParser
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from urllib.request import Request, urlopen
 
 from .official_sources import OFFICIAL_SOURCES, OfficialSource
@@ -48,17 +49,38 @@ def import_official_sources(
 ) -> int:
     raw_dir.mkdir(parents=True, exist_ok=True)
     processed_path.parent.mkdir(parents=True, exist_ok=True)
+    error_path = processed_path.with_name("import_errors.jsonl")
 
     imported = 0
-    with processed_path.open("w", encoding="utf-8") as output:
+    with processed_path.open("w", encoding="utf-8") as output, error_path.open("w", encoding="utf-8") as errors:
         for source in sources:
-            html = fetch_url(source.url)
-            raw_file = raw_dir / f"{source.slug}.html"
-            raw_file.write_text(html, encoding="utf-8")
-
-            parser = VisibleTextParser()
-            parser.feed(html)
-            text = parser.text()
+            try:
+                payload = fetch_url(source.url)
+            except Exception as exc:
+                errors.write(
+                    json.dumps(
+                        {
+                            "title": source.title,
+                            "url": source.url,
+                            "topic": source.topic,
+                            "error": str(exc),
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+                continue
+            suffix = ".pdf" if source.resource_type == "pdf" else ".html"
+            raw_file = raw_dir / f"{source.slug}{suffix}"
+            if source.resource_type == "pdf":
+                raw_file.write_bytes(payload)
+                text = extract_pdf_text(payload)
+            else:
+                html = payload.decode("utf-8", errors="replace")
+                raw_file.write_text(html, encoding="utf-8")
+                parser = VisibleTextParser()
+                parser.feed(html)
+                text = parser.text()
             if not text:
                 continue
             record = {
@@ -71,7 +93,27 @@ def import_official_sources(
     return imported
 
 
-def fetch_url(url: str) -> str:
+def fetch_url(url: str) -> bytes:
     request = Request(url, headers={"User-Agent": "Off_WebSec_RAG/0.1 university project"})
-    with urlopen(request, timeout=30) as response:
-        return response.read().decode("utf-8", errors="replace")
+    with urlopen(request, timeout=20) as response:
+        return response.read()
+
+
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return "PDF source downloaded. Install pypdf to extract searchable PDF text."
+    with NamedTemporaryFile(suffix=".pdf", delete=False) as handle:
+        handle.write(payload)
+        temp_path = Path(handle.name)
+    try:
+        pages = [(page.extract_text() or "") for page in reader.pages]
+        text = "\n".join(pages)
+        text = re.sub(r"[ \t]+", " ", text)
+        text = re.sub(r"\n\s*\n+", "\n", text)
+        return text.strip()
+        temp_path.unlink(missing_ok=True)
+    finally:
+        reader = PdfReader(str(temp_path))
+
+
