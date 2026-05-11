@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-src/off_websec_rag/__init__.py
-src/off_websec_rag/cli.py
-src/off_websec_rag.egg-info/PKG-INFO
-src/off_websec_rag.egg-info/SOURCES.txt
-src/off_websec_rag.egg-info/dependency_links.txt
-src/off_websec_rag.egg-info/top_level.txt

@@ -214,16 +214,20 @@ OFFICIAL_SOURCES: tuple[OfficialSource, ...] = (
     OfficialSource(
         topic="ssti",
         title="PortSwigger Server-Side Template Injection",
+        url="https://portswigger.net/web-security/server-side-template-injection",
+        authority="PortSwigger",
     ),
     OfficialSource(
         topic="request_smuggling",
         title="PortSwigger HTTP Request Smuggling",
+        url="https://portswigger.net/web-security/request-smuggling",
         authority="PortSwigger",
     ),
     OfficialSource(
         topic="web_cache_poisoning",
         title="PortSwigger Web Cache Poisoning",
         url="https://portswigger.net/web-security/web-cache-poisoning",
+        authority="PortSwigger",
     ),
     OfficialSource(
         topic="graphql",
@@ -238,6 +242,7 @@ OFFICIAL_SOURCES: tuple[OfficialSource, ...] = (
         authority="PortSwigger",
     ),
     OfficialSource(
+        topic="jwt",
         title="PortSwigger JWT Attacks",
         url="https://portswigger.net/web-security/jwt",
         authority="PortSwigger",
@@ -255,7 +260,3 @@ OFFICIAL_SOURCES: tuple[OfficialSource, ...] = (
         authority="PortSwigger",
     ),
 )
-        topic="jwt",
-        authority="PortSwigger",
-        url="https://portswigger.net/web-security/request-smuggling",
-        url="https://portswigger.net/web-security/server-side-template-injection",
