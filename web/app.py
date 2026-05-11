@@ -16,11 +16,12 @@ def create_app() -> Flask:
         question = ""
         answer = ""
         results = []
-        status = "Waiting for corpus import and RAG engine merge."
+        index_ready = INDEX_PATH.exists()
+        status = "Index armed." if index_ready else "Index offline. Waiting for corpus import and Simple RAG engine merge."
 
         if request.method == "POST":
             question = request.form.get("question", "").strip()
-            if not INDEX_PATH.exists():
+            if not index_ready:
                 status = "Index not found. After all team parts are merged, run import-sources then ingest."
             elif question:
                 try:
@@ -40,6 +41,7 @@ def create_app() -> Flask:
             answer=answer,
             results=results,
             status=status,
+            index_ready=index_ready,
         )
 
     return app

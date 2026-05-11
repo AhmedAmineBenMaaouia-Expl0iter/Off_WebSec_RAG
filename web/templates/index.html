@@ -7,44 +7,81 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  <div class="scanline" aria-hidden="true"></div>
+
   <main class="shell">
-    <header class="header">
-      <p class="eyebrow">Simple RAG · Official Web Attack Sources</p>
-      <h1>Off_WebSec_RAG</h1>
-      <p class="scope">Baseline retrieval-augmented generation for OWASP and MITRE web attack references.</p>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Simple RAG / Official Web Attack Sources</p>
+        <h1>Off_WebSec_RAG</h1>
+      </div>
+      <div class="system-state {{ 'online' if index_ready else 'offline' }}">
+        <span></span>
+        {{ "INDEX READY" if index_ready else "INDEX OFFLINE" }}
+      </div>
     </header>
 
-    <section class="panel">
-      <form method="post" class="question-form">
-        <label for="question">Ask a web attack question</label>
-        <div class="row">
-          <input id="question" name="question" value="{{ question }}" placeholder="What is SQL injection?">
-          <button type="submit">Ask</button>
+    <section class="hero">
+      <div class="command-panel">
+        <div class="panel-header">
+          <span class="window-dot red"></span>
+          <span class="window-dot amber"></span>
+          <span class="window-dot green"></span>
+          <strong>query-console</strong>
         </div>
-      </form>
-      <p class="status">{{ status }}</p>
+        <form method="post" class="question-form">
+          <label for="question">Web attack question</label>
+          <div class="input-row">
+            <span class="prompt">rag@offsec:~$</span>
+            <input id="question" name="question" value="{{ question }}" placeholder="What is SQL injection?">
+            <button type="submit">Run</button>
+          </div>
+        </form>
+        <p class="status">{{ status }}</p>
+      </div>
+
+      <div class="attack-surface" aria-hidden="true">
+        <div class="route route-a"></div>
+        <div class="route route-b"></div>
+        <div class="route route-c"></div>
+        <div class="node core">RAG</div>
+        <div class="node node-sqli">SQLi</div>
+        <div class="node node-xss">XSS</div>
+        <div class="node node-ssrf">SSRF</div>
+        <div class="node node-owasp">OWASP</div>
+        <div class="node node-mitre">MITRE</div>
+      </div>
     </section>
 
-    <section class="grid">
-      <article class="panel">
-        <h2>Answer</h2>
-        <pre>{{ answer or "The answer will appear here after the official corpus and Simple RAG engine are merged." }}</pre>
+    <section class="workspace">
+      <article class="answer-panel">
+        <div class="section-title">
+          <span>01</span>
+          <h2>Grounded Answer</h2>
+        </div>
+        <pre>{{ answer or "Ask a web attack question after the official corpus and Simple RAG engine are merged." }}</pre>
       </article>
 
-      <aside class="panel">
-        <h2>Retrieved Sources</h2>
+      <aside class="source-panel">
+        <div class="section-title">
+          <span>02</span>
+          <h2>Official Sources</h2>
+        </div>
         {% if results %}
           <ul class="sources">
             {% for item in results %}
               <li>
                 <strong>{{ item.chunk.metadata.title }}</strong>
-                <span>score {{ "%.3f"|format(item.score) }}</span>
-                <a href="{{ item.chunk.metadata.url }}" target="_blank" rel="noreferrer">official source</a>
+                <small>score {{ "%.3f"|format(item.score) }}</small>
+                <a href="{{ item.chunk.metadata.url }}" target="_blank" rel="noreferrer">open source</a>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <p>No retrieved chunks yet.</p>
+          <div class="empty-state">
+            <span>NO CHUNKS</span>
+            <p>Retrieved OWASP/MITRE chunks will appear here.</p>
+          </div>
         {% endif %}
       </aside>
     </section>
