@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: off-websec-rag
-Version: 0.1.0
-Summary: Simple RAG for official web attack resources
-Requires-Python: >=3.10

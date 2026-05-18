@@ -563,4 +563,3 @@ OFFICIAL_SOURCES: tuple[OfficialSource, ...] = (
         authority="PortSwigger",
     ),
 )
-
