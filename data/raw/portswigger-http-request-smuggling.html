@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>What is HTTP request smuggling? Tutorial &amp; Examples | Web Security Academy</title>
+    <meta content="In this section, we&#x27;ll explain HTTP request smuggling attacks and describe how common request smuggling vulnerabilities can arise. Labs If you&#x27;re already ..." name="description">
+    <!-- Twitter data -->
+
+
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="">
+<meta name="twitter:image" content="https://portswigger.net/content/images/logos/academy-twittercard.png">
+    <meta name="twitter:site" content="@WebSecAcademy">
+
+<!-- Open Graph data -->
+<meta property="og:title" content=""/>
+<meta property="og:url" content="https://portswigger.net"/>
+<meta property="og:image" content="https://portswigger.net/content/images/logos/academy-twittercard.png"/>
+<meta property="og:type" content="website"/>
+<link rel="canonical" href="https://portswigger.net/web-security/request-smuggling"/>
+<link rel="icon" href="/content/images/logos/favicon.ico" type="image/x-icon"/>
+<link rel="apple-touch-icon" href="/content/images/logos/apple-touch-icon.png">
+    <link href="/content/pswebsecacademy.css" rel="stylesheet" type="text/css">
+    <link rel="preload" href="/content/fonts/ps-icons-small/ps-icons-small.woff?td2uot" as="font" crossorigin="anonymous">
+<link rel="preload" href="/content/fonts/ps-main/ps-icons.woff?l1la2n" as="font" crossorigin="anonymous">
+    
+
+<script nonce="afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD">
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init Dr qr Ci Br Zr Pr capture calculateEventProperties Ur register register_once register_for_session unregister unregister_for_session Xr getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Jr identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty Gr Hr createPersonProfile setInternalOrTestUser Wr Fr tn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing $r debug ki Yr getPageViewId captureTraceFeedback captureTraceMetric Rr".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_zmnmWxifkm9THV54Mrn2XvFDL3Tq497pyRgrYbDu5PGW', {
+        api_host: 'https://phingest.staging.portswigger.com',
+        defaults: '2026-01-30',
+        person_profiles: 'identified_only',
+    })
+</script>
+
+</head>
+<body class="theme-">
+
+
+<script nonce="afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD">
+    (function (window, document, dataLayerName, id) {
+        window[dataLayerName] = window[dataLayerName] || [], window[dataLayerName].push({
+            start: (new Date).getTime(),
+            event: "stg.start"
+        });
+        var scripts = document.getElementsByTagName('script')[0], tags = document.createElement('script');
+        var qP = [];
+        dataLayerName !== "dataLayer" && qP.push("data_layer_name=" + dataLayerName), tags.nonce = "afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD";
+        var qPString = qP.length > 0 ? ("?" + qP.join("&")) : "";
+        tags.async = !0, tags.src = "https://ps.containers.piwik.pro/" + id + ".js" + qPString,
+            scripts.parentNode.insertBefore(tags, scripts);
+        !function (a, n, i) {
+            a[n] = a[n] || {};
+            for (var c = 0; c < i.length; c++) !function (i) {
+                a[n][i] = a[n][i] || {}, a[n][i].api = a[n][i].api || function () {
+                    var a = [].slice.call(arguments, 0);
+                    "string" == typeof a[0] && window[dataLayerName].push({
+                        event: n + "." + i + ":" + a[0],
+                        parameters: [].slice.call(arguments, 1)
+                    })
+                }
+            }(i[c])
+        }(window, "ppms", ["tm", "cm"]);
+    })(window, document, 'dataLayer', '287552c2-4917-42e0-8982-ba994a2a73d7');
+</script>
+
+
+
+<header class="page-header" id="top">
+    <div class="container">
+    <a class="logo" href="/"></a>
+    <div class="header-right">
+        <div class="login-buttons">
+            <a class="button-orange-small" href="/users/youraccount/personaldetails">My account</a>
+        </div>
+        
+
+    <input type="checkbox" id="hamburger-mobile" class="hamburger-input-mobile">
+    <input type="radio" id="hamburger-desktop" class="hamburger-input-desktop" name="mega-nav-input">
+    <div class="hamburger-menu-mobile">
+        <label class="hamburger-menu-label header-hidden" for="hamburger-mobile">
+            <span class="hamburger-layers"></span>
+        </label>
+    </div>
+    <div class="mega-nav">
+        <input type="radio" id="mega-nav-close" class="mega-nav-input-close" name="mega-nav-input">
+        <input type="radio" id="mega-nav-label-1" class="mega-nav-input-1" name="mega-nav-input">
+        <input type="radio" id="mega-nav-label-2" class="mega-nav-input-2" name="mega-nav-input">
+        <input type="radio" id="mega-nav-label-6" class="mega-nav-input-6" name="mega-nav-input">
+        <input type="radio" id="mega-nav-label-7" class="mega-nav-input-7" name="mega-nav-input">
+
+        <label for="mega-nav-close" class="mega-nav-close"></label>
+
+        <label class="mega-nav-label mega-nav-label-1" for="mega-nav-label-1">
+            <span class="mega-nav-text">Products</span>
+            <span class="icon-arrow-head-down"></span>
+        </label>
+        <label class="mega-nav-label mega-nav-label-2" for="mega-nav-label-2">
+            <span class="mega-nav-text">Solutions</span>
+            <span class="icon-arrow-head-down"></span>
+        </label>
+        <a class="mega-nav-link" href="/research"><span class="mega-nav-text">Research</span></a>
+        <a class="mega-nav-link" href="/web-security"><span class="mega-nav-text">Academy</span></a>
+        <label class="mega-nav-label mega-nav-label-6" for="mega-nav-label-6">
+            <span class="mega-nav-text">Support</span>
+            <span class="icon-arrow-head-down"></span>
+        </label>
+
+        <label class="mega-nav-label mega-nav-label-7 header-hidden" for="mega-nav-label-7">
+            <span class="mega-nav-text">Company</span>
+            <span class="icon-arrow-head-down"></span>
+        </label>
+        <div class="hamburger-menu-desktop">
+            <label class="hamburger-menu-label header-show" for="hamburger-desktop">
+                <span class="hamburger-layers"></span>
+            </label>
+            <div>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-1" href="/customers"><span class="mega-nav-text">Customers</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-3" href="/about"><span class="mega-nav-text">About</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-4" href="/blog"><span class="mega-nav-text">Blog</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-5" href="/careers"><span class="mega-nav-text">Careers</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-6" href="/legal"><span class="mega-nav-text">Legal</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-7" href="/contact"><span class="mega-nav-text">Contact</span></a>
+                <a class="hamburger-menu-desktop-link hamburger-menu-desktop-link-8" href="/support/reseller-faqs"><span class="mega-nav-text">Resellers</span></a>
+            </div>
+        </div>
+
+        <a class="mega-nav-link header-hidden" href="/users/youraccount"><span class="mega-nav-text">My account</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-1" href="/customers"><span class="mega-nav-text">Customers</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-3" href="/about"><span class="mega-nav-text">About</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-4" href="/blog"><span class="mega-nav-text">Blog</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-5" href="/careers"><span class="mega-nav-text">Careers</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-6" href="/legal"><span class="mega-nav-text">Legal</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-7" href="/contact"><span class="mega-nav-text">Contact</span></a>
+        <a class="hamburger-menu-link hamburger-menu-link-8" href="/support/reseller-faqs"><span class="mega-nav-text">Resellers</span></a>
+
+        <div class="mega-nav-container">
+
+            <div class="mega-nav-content mega-nav-content-1">
+                <div class="section-white-medium-no-padding">
+                    <div class="container-columns-66-percent-right">
+                        <div>
+                            <a href="/burp/enterprise" class="link-block-white">
+                                <img src="/content/images/svg/icons/enterprise.svg" alt="Burp Suite DAST">
+                                <span><strong>Burp Suite DAST</strong></span>
+                                <span>The enterprise-enabled dynamic web vulnerability scanner.</span>
+                            </a>
+
+                            <a href="/burp/pro" class="link-block-white">
+                                <img src="/content/images/svg/icons/professional.svg" alt="Burp Suite Professional">
+                                <span><strong>Burp Suite Professional</strong></span>
+                                <span>The world's #1 web penetration testing toolkit.</span>
+                            </a>
+
+                            <a href="/burp/communitydownload" class="link-block-white">
+                                <img src="/content/images/svg/icons/community.svg" alt="Burp Suite Community Edition">
+                                <span><strong>Burp Suite Community Edition</strong></span>
+                                <span>The best manual tools to start web security testing.</span>
+                            </a>
+
+                            <a href="/burp" class="chevron-after">View all product editions</a>
+                        </div>
+
+                        <div>
+                            <div class="container-cards-lists-white">
+                                <a href="/burp/vulnerability-scanner">
+                                    <p><strong>Burp Scanner</strong></p>
+                                    <p>Burp Suite's web vulnerability scanner</p>
+                                    <img src="/mega-nav/images/burp-suite-scanner.jpg" alt="Burp Suite's web vulnerability scanner'">
+                                </a>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="mega-nav-content mega-nav-content-2">
+                <div class="section-white-medium-no-padding">
+                    <div class="container-columns-66-percent-right">
+                        <div>
+                            <div class="container-columns">
+                                <a href="/solutions/attack-surface-visibility" class="link-block-white">
+                                    <span><strong>Attack surface visibility</strong></span>
+                                    <span>Improve security posture, prioritize manual testing, free up time.</span>
+                                </a>
+                                <a href="/solutions/ci-driven-scanning" class="link-block-white">
+                                    <span><strong>CI-driven scanning</strong></span>
+                                    <span>More proactive security - find and fix vulnerabilities earlier.</span>
+                                </a>
+                                <a href="/solutions" class="link-block-white">
+                                    <span><strong>Application security testing</strong></span>
+                                    <span>See how our software enables the world to secure the web.</span>
+                                </a>
+                                <a href="/solutions/devsecops" class="link-block-white">
+                                    <span><strong>DevSecOps</strong></span>
+                                    <span>Catch critical bugs; ship more secure software, more quickly.</span>
+                                </a>
+
+                                <a href="/solutions/penetration-testing" class="link-block-white">
+                                    <span><strong>Penetration testing</strong></span>
+                                    <span>Accelerate penetration testing - find more bugs, more quickly.</span>
+                                </a>
+                                <a href="/solutions/automated-security-testing" class="link-block-white">
+                                    <span><strong>Automated scanning</strong></span>
+                                    <span>Scale dynamic scanning. Reduce risk. Save time/money.</span>
+                                </a>
+
+                                <a href="/solutions/bug-bounty-hunting" class="link-block-white">
+                                    <span><strong>Bug bounty hunting</strong></span>
+                                    <span>Level up your hacking and earn more bug bounties.</span>
+                                </a>
+                                <a href="/solutions/compliance" class="link-block-white">
+                                    <span><strong>Compliance</strong></span>
+                                    <span>Enhance security monitoring to comply with confidence.</span>
+                                </a>
+                            </div>
+                            <a href="/solutions" class="chevron-after">View all solutions</a>
+                        </div>
+
+                        <div>
+                            <div class="container-cards-lists-white">
+                                <a href="/burp/dast/resources/dast-vs-professional">
+                                    <p><strong>Product comparison</strong></p>
+                                    <p>What's the difference between Pro and DAST?</p>
+                                    <img src="/mega-nav/images/burp-suite.jpg" alt="Burp Suite Professional vs Burp Suite DAST">
+                                </a>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="mega-nav-content mega-nav-content-6">
+                <div class="section-white-medium-no-padding">
+                    <div class="container-columns-66-percent-right">
+                        <div>
+                            <div class="container-columns">
+                                <a href="/support" class="link-block-white">
+                                    <span><strong>Support Center</strong></span>
+                                    <span>Get help and advice from our experts on all things Burp.</span>
+                                </a>
+                                <a href="/burp/documentation" class="link-block-white">
+                                    <span><strong>Documentation</strong></span>
+                                    <span>Tutorials and guides for Burp Suite.</span>
+                                </a>
+                                <a href="/burp/documentation/desktop/getting-started" class="link-block-white">
+                                    <span><strong>Get Started - Professional</strong></span>
+                                    <span>Get started with Burp Suite Professional.</span>
+                                </a>
+                                <a href="/burp/documentation/dast/getting-started" class="link-block-white">
+                                    <span><strong>Get Started - DAST</strong></span>
+                                    <span>Get started with Burp Suite DAST.</span>
+                                </a>
+                                <a href="/burp/releases" class="link-block-white">
+                                    <span><strong>Downloads</strong></span>
+                                    <span>Download the latest version of Burp Suite.</span>
+                                </a>
+                            </div>
+                            <a href="/support" class="chevron-after">Visit the Support Center</a>
+                        </div>
+
+                        <div>
+                            <div class="container-cards-lists-white">
+                                <a href="/burp/releases">
+                                    <p><strong>Downloads</strong></p>
+                                    <p>Download the latest version of Burp Suite.</p>
+                                    <img src="/mega-nav/images/latest-burp-suite-software-download.jpg" alt="The latest version of Burp Suite software for download">
+                                </a>
+                            </div>
+
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    </div>
+</div>
+</header>
+
+            <nav class="navigation-top">
+                <input type="checkbox" id="nav-main-enterprise">
+                <label for="nav-main-enterprise">
+                    <span>Academy home</span>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li><a href="https://portswigger.net/web-security/dashboard">Dashboard</a></li>
+                    <li><a href="https://portswigger.net/web-security/learning-paths">Learning paths</a></li>
+                    <li>
+                        <input type="checkbox" id="nav-main-academy-topics">
+                        <label for="nav-main-academy-topics">
+                            <span>Latest topics</span>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <div>
+                            <a href="/web-security/request-smuggling">Request smuggling</a>
+                            <a href="/web-security/web-cache-deception">Web cache deception</a>
+                            <a href="/web-security/llm-attacks">Web LLM attacks</a>
+                            <a href="/web-security/api-testing">API testing</a>
+                            <a href="/web-security/nosql-injection">NoSQL injection</a>
+                            <a href="/web-security/all-topics">View all topics</a>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="nav-main-academy-all-content">
+                        <label for="nav-main-academy-all-content">
+                            <span>All content</span>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <div>
+                            <a href="/web-security/all-labs">All labs</a>
+                            <a href="/web-security/all-topics">All topics</a>
+                            <a href="/web-security/mystery-lab-challenge">Mystery labs</a>
+                        </div>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="nav-main-academy-hall-of-fame">
+                        <label for="nav-main-academy-hall-of-fame">
+                            <span>Hall of Fame</span>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <div>
+                            <a href="https://portswigger.net/web-security/hall-of-fame">Leaderboard</a>
+                            <a href="https://portswigger.net/web-security/getting-started/kamil-vavra/index.html">Interview - Kamil Vavra</a>
+                            <a href="https://portswigger.net/web-security/getting-started/johnny-villarreal/index.html">Interview - Johnny Villarreal</a>
+                            <a href="https://portswigger.net/web-security/getting-started/andres-rauschecker/index.html">Interview - Andres Rauschecker</a>
+                        </div>
+                    </li>
+                    <li><a href="https://portswigger.net/web-security/getting-started/index.html">Get started</a></li>
+                    <li>
+                        <input type="checkbox" id="nav-main-academy-certification">
+                        <label for="nav-main-academy-certification">
+                             <span>Get certified</span>
+                             <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <div>
+                             <a href="https://portswigger.net/web-security/certification/index.html">Get certified</a>
+                             <a href="https://portswigger.net/web-security/certification/how-to-prepare/index.html">How to prepare</a>
+                             <a href="https://portswigger.net/web-security/certification/how-it-works/index.html">How it works</a>
+                             <a href="https://portswigger.net/web-security/certification/practice-exam/index.html">Practice exam</a>
+                             <a href="https://portswigger.net/web-security/certification/exam-hints-and-guidance/index.html">Exam hints and guidance</a>
+                             <a href="https://portswigger.net/web-security/certification/how-it-works/index.html#what-the-exam-involves">What the exam involves</a>
+                             <a href="https://portswigger.net/web-security/certification/frequently-asked-questions/index.html">FAQs</a>
+                             <a href="https://portswigger.net/web-security/certification#validate-your-certification">Validate your certification</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        
+<div class="wrapper-large">
+    <div class="container-academy">
+
+        <input class="nav-lhs-toggle-input" type="checkbox" id="nav-lhs-toggle">
+        <aside class="nav-lhs" id="tree-nav" tree-nav-version="45">
+            <nav class="nav-lhs-scrollable">
+                <label class="nav-lhs-toggle-label" for="nav-lhs-toggle"></label>
+                
+
+        <a class="nav-back" href="/web-security/all-topics">
+            <span class="icon-arrow-head-left"></span>
+            Back to all topics
+        </a>
+        <input type="checkbox" id="nav-main-id">
+        <label class="nav-label" for="nav-main-id">
+            <span class="icon-arrow-head-down"></span>
+        </label>
+        <h3>HTTP request smuggling</h3>
+        <ul>
+            <li><a href="/web-security/request-smuggling#what-is-http-request-smuggling">What is HTTP request smuggling?</a></li>
+            <li><a href="/web-security/request-smuggling#how-do-http-request-smuggling-vulnerabilities-arise">How vulnerabilities arise</a></li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-1">
+                <label for="sub-nav-id-1">
+                    <a href="/web-security/request-smuggling#how-to-perform-an-http-request-smuggling-attack">Performing an attack</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li><a href="/web-security/request-smuggling#cl-te-vulnerabilities">CL.TE vulnerabilities</a></li>
+                    <li><a href="/web-security/request-smuggling#te-cl-vulnerabilities">TE.CL vulnerabilities</a></li>
+                    <li><a href="/web-security/request-smuggling#te-te-behavior-obfuscating-the-te-header">TE.TE vulnerabilities</a></li>
+                </ul>
+            </li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-2">
+                <label for="sub-nav-id-2">
+                    <a href="/web-security/request-smuggling/finding">Identifying vulnerabilities</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li><a href="/web-security/request-smuggling/finding#finding-cl-te-vulnerabilities-using-timing-techniques">CL.TE vulnerabilities</a></li>
+                    <li><a href="/web-security/request-smuggling/finding#finding-te-cl-vulnerabilities-using-timing-techniques">TE.CL vulnerabilities</a></li>
+                </ul>
+            </li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-3">
+                <label for="sub-nav-id-3">
+                    <a href="/web-security/request-smuggling/finding#confirming-http-request-smuggling-vulnerabilities-using-differential-responses">Confirming vulnerabilities</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li><a href="/web-security/request-smuggling/finding#finding-cl-te-vulnerabilities-using-timing-techniques">CL.TE vulnerabilities</a></li>
+                    <li><a href="/web-security/request-smuggling/finding#finding-te-cl-vulnerabilities-using-timing-techniques">TE.CL vulnerabilities</a></li>
+                </ul>
+            </li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-4">
+                <label for="sub-nav-id-4">
+                    <a href="/web-security/request-smuggling/exploiting">Exploiting vulnerabilities</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li><a href="/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-bypass-front-end-security-controls">Bypassing front-end security controls</a></li>
+                    <li><a href="/web-security/request-smuggling/exploiting#revealing-front-end-request-rewriting">Revealing front-end request rewriting</a></li>
+                    <li><a href="/web-security/request-smuggling/exploiting#bypassing-client-authentication">Bypassing client authentication</a></li>
+                    <li><a href="/web-security/request-smuggling/exploiting#capturing-other-users-requests">Capturing other users' requests</a></li>
+                    <li><a href="/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-exploit-reflected-xss">Exploiting reflected XSS</a></li>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-5">
+                        <label for="sub-nav-id-5">
+                            <a href="/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-turn-an-on-site-redirect-into-an-open-redirect">Turning an on-site redirect into an open redirect</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/exploiting#turning-root-relative-redirects-into-open-redirects">Turning root-relative redirects into open redirects</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-perform-web-cache-poisoning">Web cache poisoning</a></li>
+                    <li><a href="/web-security/request-smuggling/exploiting#using-http-request-smuggling-to-perform-web-cache-deception">Web cache deception</a></li>
+                </ul>
+            </li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-6">
+                <label for="sub-nav-id-6">
+                    <a href="/web-security/request-smuggling/advanced">Advanced request smuggling</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-7">
+                        <label for="sub-nav-id-7">
+                            <a href="/web-security/request-smuggling/advanced#http-2-request-smuggling">HTTP/2 request smuggling</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/advanced#http-2-message-length">Message length</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced#http-2-downgrading">HTTP/2 downgrading</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced#h2-cl-vulnerabilities">H2.CL vulnerabilities</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced#h2-te-vulnerabilities">H2.TE vulnerabilities</a></li>
+                            <li>
+                                <input type="checkbox" id="sub-nav-id-8">
+                                <label for="sub-nav-id-8">
+                                    <a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors">HTTP/2-exclusive vectors</a>
+                                    <span class="icon-arrow-head-down"></span>
+                                </label>
+                                <ul>
+                                    <li><a href="/web-security/request-smuggling/advanced#request-smuggling-via-crlf-injection">Request smuggling via CRLF injection</a></li>
+                                    <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#injecting-via-header-names">Injecting via header names</a></li>
+                                    <li>
+                                        <input type="checkbox" id="sub-nav-id-9">
+                                        <label for="sub-nav-id-9">
+                                            <a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#injecting-via-pseudo-headers">Injecting via pseudo-headers</a>
+                                            <span class="icon-arrow-head-down"></span>
+                                        </label>
+                                        <ul>
+                                            <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#supplying-an-ambiguous-host">Supplying an ambiguous host</a></li>
+                                            <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#supplying-an-ambiguous-path">Supplying an ambiguous path</a></li>
+                                            <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#injecting-a-full-request-line">Injecting a full request line</a></li>
+                                            <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#injecting-a-url-prefix">Injecting a URL prefix</a></li>
+                                            <li><a href="/web-security/request-smuggling/advanced/http2-exclusive-vectors#injecting-newlines-into-pseudo-headers">Injecting newlines</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/web-security/request-smuggling/advanced#hidden-http-2-support">Hidden HTTP/2 support</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-10">
+                        <label for="sub-nav-id-10">
+                            <a href="/web-security/request-smuggling/advanced/response-queue-poisoning">Response queue poisoning</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/advanced/response-queue-poisoning#what-is-the-impact-of-response-queue-poisoning">Impact</a></li>
+                            <li>
+                                <input type="checkbox" id="sub-nav-id-11">
+                                <label for="sub-nav-id-11">
+                                    <a href="/web-security/request-smuggling/advanced/response-queue-poisoning#how-to-construct-a-response-queue-poisoning-attack">Constructing an attack</a>
+                                    <span class="icon-arrow-head-down"></span>
+                                </label>
+                                <ul>
+                                    <li><a href="/web-security/request-smuggling/advanced/response-queue-poisoning#understanding-the-aftermath-of-request-smuggling">Understanding the aftermath of request smuggling</a></li>
+                                    <li><a href="/web-security/request-smuggling/advanced/response-queue-poisoning#smuggling-a-complete-request">Smuggling a complete request</a></li>
+                                    <li><a href="/web-security/request-smuggling/advanced/response-queue-poisoning#desynchronizing-the-response-queue">Desynchronizing the response queue</a></li>
+                                    <li><a href="/web-security/request-smuggling/advanced/response-queue-poisoning#stealing-other-users-responses">Stealing other users' responses</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-12">
+                        <label for="sub-nav-id-12">
+                            <a href="/web-security/request-smuggling/advanced#http-2-request-splitting">HTTP/2 request splitting</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/advanced#accounting-for-front-end-rewriting">Accounting for front-end rewriting</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-13">
+                        <label for="sub-nav-id-13">
+                            <a href="/web-security/request-smuggling/advanced/request-tunnelling">HTTP request tunnelling</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/advanced/request-tunnelling#request-tunnelling-with-http-2">HTTP/2 request tunnelling</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced/request-tunnelling#leaking-internal-headers-via-http-2-request-tunnelling">Leaking internal headers</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced/request-tunnelling#blind-request-tunnelling">Blind request tunnelling</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced/request-tunnelling#non-blind-request-tunnelling-using-head">Non-blind request tunnelling using HEAD requests</a></li>
+                            <li><a href="/web-security/request-smuggling/advanced/request-tunnelling#web-cache-poisoning-via-http-2-request-tunnelling">Web cache poisoning</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="/web-security/request-smuggling/advanced#0-cl-request-smuggling">0.CL request smuggling</a></li>
+                </ul>
+            </li>
+            <li>
+                <input type="checkbox" id="sub-nav-id-14">
+                <label for="sub-nav-id-14">
+                    <a href="/web-security/request-smuggling/browser">Browser-powered request smuggling</a>
+                    <span class="icon-arrow-head-down"></span>
+                </label>
+                <ul>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-15">
+                        <label for="sub-nav-id-15">
+                            <a href="/web-security/request-smuggling/browser/cl-0">CL.0 request smuggling</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/browser/cl-0#testing-for-cl-0-vulnerabilities">Testing for CL.0 vulnerabilities</a></li>
+                            <li><a href="/web-security/request-smuggling/browser/cl-0#eliciting-cl-0-behavior">Eliciting CL.0 behavior</a></li>
+                            <li><a href="/web-security/request-smuggling/browser/cl-0#exploiting-cl-0-vulnerabilities">Exploiting CL.0 vulnerabilities</a></li>
+                            <li><a href="/web-security/request-smuggling/browser/cl-0#h2-0-vulnerabilities">H2.0 vulnerabilities</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="sub-nav-id-16">
+                        <label for="sub-nav-id-16">
+                            <a href="/web-security/request-smuggling/browser/client-side-desync">Client-side desync attacks</a>
+                            <span class="icon-arrow-head-down"></span>
+                        </label>
+                        <ul>
+                            <li><a href="/web-security/request-smuggling/browser/client-side-desync#what-is-a-client-side-desync-attack">What is a client-side desync attack?</a></li>
+                            <li>
+                                <input type="checkbox" id="sub-nav-id-17">
+                                <label for="sub-nav-id-17">
+                                    <a href="/web-security/request-smuggling/browser/client-side-desync#testing-for-client-side-desync-vulnerabilities">Testing for vulnerabilities</a>
+                                    <span class="icon-arrow-head-down"></span>
+                                </label>
+                                <ul>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#probing-for-client-side-desync-vectors">Probing for client-side desync vectors</a></li>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#confirming-the-desync-vector-in-burp">Confirming the desync vector in Burp</a></li>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#building-a-proof-of-concept-in-a-browser">Building a proof of concept in a browser</a></li>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#handling-redirects">Handling redirects</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="sub-nav-id-18">
+                                <label for="sub-nav-id-18">
+                                    <a href="/web-security/request-smuggling/browser/client-side-desync#exploiting-client-side-desync-vulnerabilities">Exploiting vulnerabilities</a>
+                                    <span class="icon-arrow-head-down"></span>
+                                </label>
+                                <ul>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#client-side-variations-of-classic-attacks">Client-side
+                                        variations of classic attacks</a></li>
+                                    <li>
+                                        <input type="checkbox" id="sub-nav-id-19">
+                                        <label for="sub-nav-id-19">
+                                            <a href="/web-security/request-smuggling/browser/client-side-desync#client-side-cache-poisoning">Client-side cache poisoning</a>
+                                            <span class="icon-arrow-head-down"></span>
+                                        </label>
+                                        <ul>
+                                            <li><a href="/web-security/request-smuggling/browser/client-side-desync#poisoning-the-cache-with-a-redirect">With a redirect</a></li>
+                                            <li><a href="/web-security/request-smuggling/browser/client-side-desync#triggering-the-resource-import">Triggering the resource import</a></li>
+                                            <li><a href="/web-security/request-smuggling/browser/client-side-desync#delivering-a-payload">Delivering a payload</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/web-security/request-smuggling/browser/client-side-desync#pivoting-attacks-against-internal-infrastructure">Pivoting attacks against internal infrastructure</a></li>
+                                </ul>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="sub-nav-id-20">
+                                <label for="sub-nav-id-20">
+                                    <a href="/web-security/request-smuggling/browser/pause-based-desync">Pause-based desync attacks</a>
+                                    <span class="icon-arrow-head-down"></span>
+                                </label>
+                                <ul>
+                                    <li><a href="/web-security/request-smuggling/browser/pause-based-desync#server-side-pause-based-desync">Server side pause-based desync</a></li>
+                                    <li><a href="/web-security/request-smuggling/browser/pause-based-desync#testing-for-pause-based-cl-0-vulnerabilities">Testing for pause-based CL.0 vulnerabilities</a></li>
+                                    <li><a href="/web-security/request-smuggling/browser/pause-based-desync#client-side-pause-based-desync">Client-side pause-based desync</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><a href="/web-security/request-smuggling#how-to-prevent-http-request-smuggling-vulnerabilities">Preventing vulnerabilities</a></li>
+            <li><a href="/web-security/all-labs#http-request-smuggling">View all request smuggling labs</a></li>
+        </ul>
+    
+            </nav>
+        </aside>
+        <main>
+            
+
+
+
+<ul class="breadcrumb-list" itemscope itemtype="http://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a itemscope itemtype="http://schema.org/Thing" itemprop="item" href="/web-security"><span itemprop="name">Web Security Academy</span></a><meta itemprop="position" content="1" /></li><li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a itemscope itemtype="http://schema.org/Thing" itemprop="item" href="/web-security/request-smuggling"><span itemprop="name">Request smuggling</span></a><meta itemprop="position" content="2" /></li></ul>    <div class="section theme-white">
+
+        <h1 class="heading-2">HTTP request smuggling</h1><p>
+            In this section, we'll explain HTTP request smuggling attacks and describe how common request smuggling vulnerabilities can arise.
+        </p><img alt="HTTP request smuggling" src="/web-security/images/http-request-smuggling.svg"><div class="highlightedarea">
+            <h4>Labs</h4>
+            <p>
+                If you're already familiar with HTTP request smuggling and just want to practice on a series of deliberately vulnerable sites, check out the link below for an overview of all labs in this topic.
+            </p>
+            
+        <ul><li><a href="/web-security/all-labs#http-request-smuggling">View all HTTP request smuggling labs</a></li></ul></div><h2 id="what-is-http-request-smuggling">What is HTTP request smuggling?</h2><p>
+            HTTP request smuggling is a technique for interfering with the way a web site processes sequences of HTTP requests that are received from
+            one or more users. Request smuggling vulnerabilities are often critical in nature, allowing an attacker to bypass security controls, gain
+            unauthorized access to sensitive data, and directly compromise other application users.
+        </p><p>
+            Request smuggling is primarily associated with HTTP/1 requests. However, websites that support HTTP/2 may be vulnerable, depending on their back-end architecture.
+        </p><div class="highlightedarea">
+            <h4>PortSwigger Research</h4>
+            <p>
+                HTTP request smuggling was first documented in 2005, and repopularized by PortSwigger's extensive research on the topic. For details, check out the following whitepapers:
+            </p>
+            <ul>
+                <li><a href="https://portswigger.net/research/http-desync-attacks-request-smuggling-reborn">HTTP desync attacks: Request smuggling reborn</a></li>
+                <li><a href="https://portswigger.net/research/http2">HTTP/2: The sequel is always worse</a></li>
+                <li><a href="https://portswigger.net/research/browser-powered-desync-attacks">Browser-powered desync attacks: A new frontier in HTTP request smuggling</a></li>
+            </ul>
+        </div><h2 id="what-happens-in-an-http-request-smuggling-attack">What happens in an HTTP request smuggling attack?</h2><p>
+            Today's web applications frequently employ chains of HTTP servers between users and the ultimate application logic. Users send requests to
+            a front-end server (sometimes called a load balancer or reverse proxy) and this server forwards requests to one or more back-end servers.
+            This type of architecture is increasingly common, and in some cases unavoidable, in modern cloud-based applications.
+        </p><p>
+            When the front-end server forwards HTTP requests to a back-end server, it typically sends several requests over the same back-end network
+            connection, because this is much more efficient and performant. The protocol is very simple; HTTP requests are sent one after another, and
+            the receiving server has to determine where one request ends and the next one begins:
+        </p><img alt="Forwarding HTTP requests to a back-end server" src="/web-security/images/forwarding-http-requests-to-back-end-server.svg"><p>
+            In this situation, it is crucial that the front-end and back-end systems agree about the boundaries between requests. Otherwise, an
+            attacker might be able to send an ambiguous request that gets interpreted differently by the front-end and back-end systems:
+        </p><img alt="Smuggling an HTTP request to a back-end server" src="/web-security/images/smuggling-http-request-to-back-end-server.svg"><p>
+            Here, the attacker causes part of their front-end request to be interpreted by the back-end server as the start of the next request. It is
+            effectively prepended to the next request, and so can interfere with the way the application processes that request. This is a request
+            smuggling attack, and it can have devastating results.
+        </p><h2 id="how-do-http-request-smuggling-vulnerabilities-arise">How do HTTP request smuggling vulnerabilities arise?</h2><p>
+            Most HTTP request smuggling vulnerabilities arise because the HTTP/1 specification provides two different ways to specify where a request
+            ends: the <code>Content-Length</code> header and the <code>Transfer-Encoding</code> header.
+        </p><p>
+            The <code>Content-Length</code> header is straightforward: it specifies the length of the message body in bytes. For
+            example:
+        </p><code class="code-scrollable">POST /search HTTP/1.1
+Host: normal-website.com
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 11
+
+q=smuggling</code><p>
+            The <code>Transfer-Encoding</code> header can be used to specify that the message body uses chunked encoding. This
+            means that the message body contains one or more chunks of data. Each chunk consists of the chunk size in bytes (expressed in
+            hexadecimal), followed by a newline, followed by the chunk contents. The message is terminated with a chunk of size zero. For example:
+        </p><code class="code-scrollable">POST /search HTTP/1.1
+Host: normal-website.com
+Content-Type: application/x-www-form-urlencoded
+Transfer-Encoding: chunked
+
+b
+q=smuggling
+0
+</code><div class="highlightedarea">
+            <h4>Note</h4>
+            <p>
+                Many security testers are unaware that chunked encoding can be used in HTTP requests, for two reasons:
+            </p>
+            <ul>
+                <li>
+                    Burp Suite automatically unpacks chunked encoding to make messages easier to view and edit.
+                </li>
+                <li>
+                Browsers do not normally use chunked encoding in requests, and it is normally seen only in server responses.
+                </li>
+            </ul>
+        </div><p>
+            As the HTTP/1 specification provides two different methods for specifying the length of HTTP messages, it is possible for a single
+            message to use both methods at once, such that they conflict with each other. The specification attempts to prevent this problem by
+            stating that if both the <code>Content-Length</code> and <code>Transfer-Encoding</code> headers are
+            present, then the <code>Content-Length</code> header should be ignored. This might be sufficient to avoid ambiguity
+            when only a single server is in play, but not when two or more servers are chained together. In this situation, problems can arise for two
+            reasons:
+        </p><ul>
+            <li>
+                Some servers do not support the <code>Transfer-Encoding</code> header in requests.
+            </li>
+            <li>
+                Some servers that do support the <code>Transfer-Encoding</code> header can be induced not to process it if the
+                header is obfuscated in some way.
+            </li>
+        </ul><p>
+            If the front-end and back-end servers behave differently in relation to the (possibly obfuscated) <code>Transfer-Encoding</code>
+            header, then they might disagree about the boundaries between successive requests, leading to request smuggling vulnerabilities.
+        </p><div class="highlightedarea">
+            <h4>Note</h4>
+            <p>
+                Websites that use HTTP/2 end-to-end are inherently immune to request smuggling attacks. As the HTTP/2 specification introduces a single, robust mechanism for specifying the length of a request, there is no way for an attacker to introduce the required ambiguity.
+            </p>
+            <p>
+                However, many websites have an HTTP/2-speaking front-end server, but deploy this in front of back-end infrastructure that only supports HTTP/1. This means that the front-end effectively has to translate the requests it receives into HTTP/1. This process is known as HTTP downgrading. For more information, see <a href="/web-security/request-smuggling/advanced">Advanced request smuggling</a>.
+            </p>
+        </div><h2 id="how-to-perform-an-http-request-smuggling-attack">How to perform an HTTP request smuggling attack</h2><p>
+            Classic request smuggling attacks involve placing both the <code>Content-Length</code> header and the <code>Transfer-Encoding</code>
+            header into a single HTTP/1 request and manipulating these so that the front-end and back-end servers process the request differently. The
+            exact way in which this is done depends on the behavior of the two servers:
+        </p><ul>
+            <li>
+                CL.TE: the front-end server uses the <code>Content-Length</code> header and the back-end server uses the <code>Transfer-Encoding</code> header.
+            </li>
+            <li>
+                TE.CL: the front-end server uses the <code>Transfer-Encoding</code> header and the back-end server uses the <code>Content-Length</code> header.
+            </li>
+            <li>
+                TE.TE: the front-end and back-end servers both support the <code>Transfer-Encoding</code> header, but one of the
+                servers can be induced not to process it by obfuscating the header in some way.
+            </li>
+        </ul><div class="highlightedarea">
+            <h4>Note</h4>
+            <p>
+                These techniques are only possible using HTTP/1 requests. Browsers and other clients, including Burp, use HTTP/2 by default to communicate with servers that explicitly advertise support for it during the TLS handshake.
+            </p>
+            <p>
+                As a result, when testing sites with HTTP/2 support, you need to manually switch protocols in Burp Repeater. You can do this from the <strong>Request attributes</strong> section of the <strong>Inspector</strong> panel.
+            </p>
+        </div><h3 id="cl-te-vulnerabilities">CL.TE vulnerabilities</h3><p>
+            Here, the front-end server uses the <code>Content-Length</code> header and the back-end server uses the <code>Transfer-Encoding</code> header. We can perform a simple HTTP request smuggling attack as follows:
+        </p><code class="code-scrollable"><span class="blue">POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 13
+Transfer-Encoding: chunked
+
+0</span>
+
+<span class="orange">SMUGGLED</span></code><p>
+            The front-end server processes the <code>Content-Length</code> header and determines that the request body is 13 bytes
+            long, up to the end of <code>SMUGGLED</code>. This request is forwarded on to the back-end server.
+        </p><p>
+            The back-end server processes the <code>Transfer-Encoding</code> header, and so treats the message body as using
+            chunked encoding. It processes the first chunk, which is stated to be zero length, and so is treated as terminating the request. The
+            following bytes, <code>SMUGGLED</code>, are left unprocessed, and the back-end server will treat these as being the
+            start of the next request in the sequence.
+        </p><div widget-id="academy-labstatus" widget-lab-id="EBC97ABBE886E96FACC0AAEE856F55E2A45D4784F5D9025FFA5E994B7D8BC2BB"></div><h3 id="te-cl-vulnerabilities">TE.CL vulnerabilities</h3><p>
+            Here, the front-end server uses the <code>Transfer-Encoding</code> header and the back-end server uses the <code>Content-Length</code> header. We can perform a simple HTTP request smuggling attack as follows:
+        </p><code class="code-scrollable"><span class="blue">POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 3
+Transfer-Encoding: chunked
+
+8</span>
+<span class="orange">SMUGGLED
+0
+</span></code><div class="highlightedarea">
+            <h4>Note</h4>
+            <p>
+                To send this request using Burp Repeater, you will first need to go to the Repeater menu and ensure that the "Update Content-Length"
+                option is unchecked.
+            </p>
+            <p>
+                You need to include the trailing sequence <code>\r\n\r\n</code> following the final <code>0</code>.
+            </p>
+        </div><p>
+            The front-end server processes the <code>Transfer-Encoding</code> header, and so treats the message body as using
+            chunked encoding. It processes the first chunk, which is stated to be 8 bytes long, up to the start of the line following <code>SMUGGLED</code>. It processes the second chunk, which is stated to be zero length, and so is treated as terminating
+            the request. This request is forwarded on to the back-end server.
+        </p><p>
+            The back-end server processes the <code>Content-Length</code> header and determines that the request body is 3 bytes
+            long, up to the start of the line following <code>8</code>. The following bytes, starting with <code>SMUGGLED</code>, are left unprocessed, and the back-end server will treat these as being the start of the next
+            request in the sequence.
+        </p><div widget-id="academy-labstatus" widget-lab-id="A6AECBC5C1D7F95E7512642A6F11FCB8C5D568F7CD57AE0CE60A08C7140583B3"></div><h3 id="te-te-behavior-obfuscating-the-te-header">TE.TE behavior: obfuscating the TE header</h3><p>
+            Here, the front-end and back-end servers both support the <code>Transfer-Encoding</code> header, but one of the servers
+            can be induced not to process it by obfuscating the header in some way.
+        </p><p>
+            There are potentially endless ways to obfuscate the <code>Transfer-Encoding</code> header. For example:
+        </p><code class="code-scrollable">Transfer-Encoding: xchunked
+
+Transfer-Encoding : chunked
+
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+
+Transfer-Encoding:[tab]chunked
+
+[space]Transfer-Encoding: chunked
+
+X: X[\n]Transfer-Encoding: chunked
+
+Transfer-Encoding
+: chunked</code><p>
+            Each of these techniques involves a subtle departure from the HTTP specification. Real-world code that implements a protocol specification
+            rarely adheres to it with absolute precision, and it is common for different implementations to tolerate different variations from the
+            specification. To uncover a TE.TE vulnerability, it is necessary to find some variation of the <code>Transfer-Encoding</code> header such that only one of the front-end or back-end servers processes it, while the
+            other server ignores it.
+        </p><p>
+            Depending on whether it is the front-end or the back-end server that can be induced not to process the obfuscated <code>Transfer-Encoding</code> header, the remainder of the attack will take the same form as for the CL.TE or TE.CL
+            vulnerabilities already described.
+        </p><div widget-id="academy-labstatus" widget-lab-id="417947BEC9FE621DFDC11F4D622CEF72B0021A6D872AA83CCA70AAF532B4B592"></div><h2 id="how-to-identify-http-request-smuggling-vulnerabilities">How to identify HTTP request smuggling vulnerabilities</h2><p>
+            Check out the following section for some tips on how to identify HTTP request smuggling vulnerabilities for yourself. We've also provided some interactive <span class="label-light-green-small">LABS</span>, so you can see how this works in practice.
+        </p><div class="highlightedarea">
+            <h4>Read more</h4>
+            
+        <ul><li><a href="/web-security/request-smuggling/finding">Finding HTTP request smuggling vulnerabilities</a></li></ul></div><h2 id="how-to-exploit-http-request-smuggling-vulnerabilities">How to exploit HTTP request smuggling vulnerabilities</h2><p>
+            Now that you're familiar with the basic concepts, let's take a look at how HTTP request smuggling can be used to craft a number of high-severity attacks. As usual, there are plenty of fully interactive <span class="label-light-green-small">LABS</span>, so you can try your hand at attacking realistic targets.
+        </p><div class="highlightedarea">
+            <h4>Read more</h4>
+            
+        <ul><li><a href="/web-security/request-smuggling/exploiting">Exploiting HTTP request smuggling vulnerabilities</a></li></ul></div><h2 id="advanced-http-request-smuggling">Advanced HTTP request smuggling</h2><p>
+            If you've already completed the rest of our request smuggling labs, you're ready to learn some more advanced techniques. We've created a number of interactive <span class="label-light-green-small">LABS</span> based on real-world vulnerabilities discovered by PortSwigger researchers. You'll even get a chance to try out Burp's one-of-a-kind features for HTTP/2-based testing.
+        </p><div class="highlightedarea">
+            <h4>Read more</h4>
+            
+        <ul><li><a href="/web-security/request-smuggling/advanced">Advanced HTTP request smuggling vulnerabilities</a></li></ul></div><h2 id="browser-powered-request-smuggling" cms-ignore-validation="DUPLICATE_HEADINGS">Browser-powered request smuggling</h2><p no-keyword-injection="">
+            The request smuggling techniques you've learned so far rely on sending intentionally malformed requests using dedicated hacking tools like Burp Repeater. In fact, it's possible to perform the same attacks using fully browser-compatible requests that desync the two servers using a perfectly normal <code>Content-Length</code> header.
+        </p><p>
+            This even enables you to launch client-side variations of these attacks, which induce a victim's browser to poison its own connection to the vulnerable website. Not only does this expose single-server sites to request smuggling-style attacks, it even enables you to attack sites that you don't have access to directly. Check out the learning materials and <span class="label-light-green-small">LABS</span> to learn how.
+        </p><div class="highlightedarea">
+            <h4>Read more</h4>
+            
+        <ul><li><a href="/web-security/request-smuggling/browser">Browser-powered request smuggling</a></li></ul></div><h2 id="how-to-prevent-http-request-smuggling-vulnerabilities">How to prevent HTTP request smuggling vulnerabilities</h2><p>
+            HTTP request smuggling vulnerabilities arise in situations where the front-end server and back-end server use different mechanisms for determining the boundaries between requests. This may be due to discrepancies between whether HTTP/1 servers use the <code>Content-Length</code> header or chunked transfer encoding to determine where each request ends. In HTTP/2 environments, the common practice of <a href="/web-security/request-smuggling/advanced/http2-downgrading">downgrading HTTP/2 requests</a> for the back-end is also fraught with issues and enables or simplifies a number of additional attacks.
+        </p><p>
+            To prevent HTTP request smuggling vulnerabilities, we recommend the following high-level measures:
+        </p><ul>
+            <li>
+                <p>
+                    Use HTTP/2 end to end and disable HTTP downgrading if possible. HTTP/2 uses a robust mechanism for determining the length of requests and, when used end to end, is inherently protected against request smuggling. If you can't avoid HTTP downgrading, make sure you validate the rewritten request against the HTTP/1.1 specification. For example, reject requests that contain newlines in the headers, colons in header names, and spaces in the request method.
+                </p>
+            </li>
+            <li>
+                <p>
+                    Make the front-end server normalize ambiguous requests and make the back-end server reject any that are still ambiguous, closing the TCP connection in the process.
+                </p>
+            </li>
+            <li>
+                <p>
+                    Never assume that requests won't have a body. This is the fundamental cause of both CL.0 and client-side desync vulnerabilities.
+                </p>
+            </li>
+            <li>
+                <p>
+                    Default to discarding the connection if server-level exceptions are triggered when handling requests.
+                </p>
+            </li>
+            <li>
+                <p>
+                    If you route traffic through a forward proxy, ensure that upstream HTTP/2 is enabled if possible.
+                </p>
+            </li>
+        </ul><p>
+            As we've demonstrated in the learning materials, disabling reuse of back-end connections will help to mitigate certain kinds of attack, but this still doesn't protect you from <a href="/web-security/request-smuggling/advanced/request-tunnelling">request tunnelling</a> attacks.
+        </p><div class="highlightedarea">
+            <h4>Read more</h4>
+            
+        <ul><li><a href="/burp/vulnerability-scanner">Find HTTP request smuggling vulnerabilities using Burp Suite's web vulnerability
+                scanner</a></li></ul></div>
+        
+        <div widget-id="academy-registration-footer"></div>
+    
+    </div>
+
+
+    <script src="/bundles/static-content/public/scripts/main.js?v=iXVGVyBRJrFKkUEv07QYqIAOdcI" nonce="afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD"></script>
+    <script src="/bundles/static-content/public/scripts/web-security.js?v=MlAST7MyaSR9VrNOeNdU_OQExcA" nonce="afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD"></script>
+
+            
+        <div class="sidebar-content">
+            <div widget-id="academy-accountstatus"></div>
+            <div class="sidebar-trial-advert">
+                <img alt="Try Burp Suite for Free" src="/content/images/logos/burp-suite-icon.svg">
+                <h4>Find HTTP request smuggling vulnerabilities using Burp Suite</h4>
+                <a class="button-white" href="https://portswigger.net/burp">Try for free</a>
+            </div>
+        </div>
+    
+        </main>
+    </div>
+</div>
+<footer class="wrapper">
+    <div class="container">
+        <div>
+            <p>Burp Suite</p>
+            <a href="/burp/vulnerability-scanner">Web vulnerability scanner</a>
+            <a href="/burp">Burp Suite Editions</a>
+            <a href="/burp/releases">Release Notes</a>
+        </div>
+        <div>
+            <p>Vulnerabilities</p>
+            <a href="/web-security/cross-site-scripting">Cross-site scripting (XSS)</a>
+            <a href="/web-security/sql-injection">SQL injection</a>
+            <a href="/web-security/csrf">Cross-site request forgery</a>
+            <a href="/web-security/xxe">XML external entity injection</a>
+            <a href="/web-security/file-path-traversal">Directory traversal</a>
+            <a href="/web-security/ssrf">Server-side request forgery</a>
+        </div>
+        <div>
+            <p>Customers</p>
+            <a href="/organizations">Organizations</a>
+            <a href="/testers">Testers</a>
+            <a href="/developers">Developers</a>
+        </div>
+        <div>
+            <p>Company</p>
+            <a href="/about">About</a>
+            <a href="/careers">Careers</a>
+            <a href="/about/contact">Contact</a>
+            <a href="/legal">Legal</a>
+            <a href="/privacy">Privacy Notice</a>
+        </div>
+        <div>
+            <p>Insights</p>
+            <a href="/web-security">Web Security Academy</a>
+            <a href="/blog">Blog</a>
+            <a href="/research">Research</a>
+        </div>
+        <div>
+            <a href="/"><img src="/content/images/logos/portswigger-logo.svg" alt="PortSwigger Logo"
+                             class="footer-logo"></a>
+            <a class="button-outline-blue-small camelcase" href="https://twitter.com/Burp_Suite" rel="noreferrer"><span
+                    class="icon-twitter"></span> Follow us</a>
+            <p class="grey">&copy; 2026 PortSwigger Ltd.</p>
+        </div>
+    </div>
+</footer>
+<a href="#top" class="back-to-top"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">
+    <polygon points="4.07 14.7 5.03 15.78 12.48 9.13 19.94 15.78 20.9 14.7 12.48 7.2 4.07 14.7" fill="#f63"/>
+    <path d="M13,0A13,13,0,1,0,26,13,13,13,0,0,0,13,0Zm0,24.56A11.56,11.56,0,1,1,24.56,13,11.58,11.58,0,0,1,13,24.56Z"
+          fill="#f63"/>
+</svg></a>
+
+
+<script nonce="afJ3ziKcdXN0J6UCbCrCYRwpd5mMGYTD" type="text/javascript">
+    piAId = '1067743';
+    piCId = '';
+    piHostname = 'go.portswigger.net';
+
+    (function () {
+        function async_load() {
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + piHostname + '/pd.js';
+            var c = document.getElementsByTagName('script')[0];
+            c.parentNode.insertBefore(s, c);
+        }
+
+        if (window.attachEvent) {
+            window.attachEvent('onload', async_load);
+        } else {
+            window.addEventListener('load', async_load, false);
+        }
+    })();
+</script>
+</body>
+</html>

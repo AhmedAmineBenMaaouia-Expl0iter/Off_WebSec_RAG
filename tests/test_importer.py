@@ -1,7 +1,7 @@
 import unittest
 
 from off_websec_rag.documents import Document
-from off_websec_rag.importer import VisibleTextParser
+from off_websec_rag.importer import VisibleTextParser, discover_owasp_community_attack_sources, sanitize_url
 from off_websec_rag.official_sources import OFFICIAL_SOURCES, OfficialSource
 
 
@@ -40,6 +40,11 @@ class OfficialSourceTests(unittest.TestCase):
         self.assertIn("file_upload", topics)
         self.assertIn("command_injection", topics)
         self.assertIn("web_testing", topics)
+        self.assertIn("content_security_policy", topics)
+        self.assertIn("xs_leaks", topics)
+        self.assertIn("web_cache_deception", topics)
+        self.assertIn("information_disclosure", topics)
+        self.assertGreaterEqual(len(OFFICIAL_SOURCES), 85)
 
     def test_pdf_source_is_configured(self):
         pdf_sources = [source for source in OFFICIAL_SOURCES if source.resource_type == "pdf"]
@@ -69,6 +74,27 @@ class VisibleTextParserTests(unittest.TestCase):
 
         self.assertIn("Visible", text)
         self.assertNotIn("hidden", text)
+
+
+class OwaspCommunityAttackDiscoveryTests(unittest.TestCase):
+    def test_discovers_attack_links_from_index_html(self):
+        html = """
+        <a href="/www-community/attacks/Blind_SQL_Injection">Blind SQL Injection</a>
+        <a href="/www-community/attacks/XPATH_Injection">XPATH Injection</a>
+        <a href="/www-community/pages/About">About</a>
+        """
+
+        sources = discover_owasp_community_attack_sources(html)
+
+        self.assertEqual(len(sources), 2)
+        self.assertEqual(sources[0].topic, "sql_injection")
+        self.assertEqual(sources[1].topic, "xpath_injection")
+        self.assertTrue(sources[0].url.startswith("https://owasp.org/www-community/attacks/"))
+
+    def test_sanitize_url_encodes_spaces_without_breaking_owasp_paths(self):
+        url = sanitize_url("https://owasp.org/www-community/attacks/Direct_Dynamic_Code_Evaluation_Eval Injection")
+
+        self.assertIn("Eval%20Injection", url)
 
 
 class DocumentTests(unittest.TestCase):

@@ -16,9 +16,12 @@ def load_documents(path: Path = Path("data/processed/documents.jsonl")) -> list[
     documents: list[Document] = []
     if not path.exists():
         return documents
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if not line.strip():
             continue
-        item = json.loads(line)
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         documents.append(Document(id=item["id"], text=item["text"], metadata=item.get("metadata", {})))
     return documents
