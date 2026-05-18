@@ -1,8 +1,0 @@
-{"title": "PortSwigger Server-Side Template Injection", "url": "https://portswigger.net/web-security/server-side-template-injection", "topic": "ssti", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger HTTP Request Smuggling", "url": "https://portswigger.net/web-security/request-smuggling", "topic": "request_smuggling", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger Web Cache Poisoning", "url": "https://portswigger.net/web-security/web-cache-poisoning", "topic": "web_cache_poisoning", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger GraphQL API Vulnerabilities", "url": "https://portswigger.net/web-security/graphql", "topic": "graphql", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger OAuth Authentication", "url": "https://portswigger.net/web-security/oauth", "topic": "oauth", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger JWT Attacks", "url": "https://portswigger.net/web-security/jwt", "topic": "jwt", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger CORS Vulnerabilities", "url": "https://portswigger.net/web-security/cors", "topic": "cors", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
-{"title": "PortSwigger Path Traversal", "url": "https://portswigger.net/web-security/file-path-traversal", "topic": "path_traversal", "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"}
